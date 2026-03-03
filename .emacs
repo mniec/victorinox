@@ -3,6 +3,21 @@
 (add-to-list 'package-archives '("elpa" . "https://elpa.gnu.org/packages/") t)
 (package-initialize)
 
+;; --- Tree-sitter grammars (auto-install if missing) ---
+(setq treesit-language-source-alist
+      '((typescript "https://github.com/tree-sitter/tree-sitter-typescript"
+                    "master" "typescript/src")
+        (tsx "https://github.com/tree-sitter/tree-sitter-typescript"
+             "master" "tsx/src")))
+
+(dolist (lang '(typescript tsx))
+  (unless (treesit-language-available-p lang)
+    (treesit-install-language-grammar lang)))
+
+;; --- TSX / TypeScript tree-sitter modes ---
+(add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.ts\\'" . typescript-ts-mode))
+
 (use-package helm
   :ensure t
   :bind (("M-x" . helm-M-x)           ;; M-x replacement
@@ -78,7 +93,7 @@
 (use-package lsp-mode
   :init
   (setq lsp-keymap-prefix "C-c k")
-  :hook ((typescript-mode . lsp-deferred)
+  :hook ((typescript-ts-mode . lsp-deferred)
          (tsx-ts-mode . lsp-deferred))
   :commands lsp lsp-deferred
   :ensure t
@@ -89,9 +104,10 @@
   :ensure t
   )
 
-(use-package typescript-mode
-  :mode "\\.ts\\'"
-  :ensure t)
+;; Completion frontend for LSP
+(use-package company
+  :ensure t
+  :hook (lsp-mode . company-mode))
 
 ;; Auto-save files every 30 seconds or after 300 characters typed
 (setq auto-save-timeout 30)
@@ -119,3 +135,8 @@
 (use-package helm-projectile
   :ensure t
   :after helm projectile)
+
+;; Git interface
+(use-package magit
+  :ensure t
+  :bind ("C-x g" . magit-status))
